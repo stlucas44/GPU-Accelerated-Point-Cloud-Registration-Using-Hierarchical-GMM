@@ -5,7 +5,7 @@ import utils
 
 #source, target = utils.prepare_source_and_target_rigid_3d('waymo1.pcd')
 
-source = o3.read_point_cloud('waymo1.pcd')
+source = o3.io.read_point_cloud('waymo1.pcd')
 
 target = copy.deepcopy(source)
 # transform target point cloud
@@ -15,7 +15,7 @@ target.transform(np.array([[np.cos(th), -np.sin(th), 0.0, 0.0],
                            [0.0, 0.0, 1.0, 0.0],
                            [0.0, 0.0, 0.0, 1.0]]))
 
-vis = o3.Visualizer()
+vis = o3.visualization.Visualizer()
 vis.create_window()
 result = copy.deepcopy(source)
 source.paint_uniform_color([1, 0, 0])

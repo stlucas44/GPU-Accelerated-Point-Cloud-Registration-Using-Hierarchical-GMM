@@ -16,7 +16,9 @@ from waymoutils import WaymoLIDARPair, convert_np_to_pc, WaymoLIDARVisCallback
 #voxel = 0.18
 voxel = 0.09
 
-waymopair = WaymoLIDARPair(max_frames=100, voxel_size = voxel, filename='../data/waymo_pcs_100k.npy', gpu=False)
+#waymopair = WaymoLIDARPair(max_frames=100, voxel_size = voxel, filename='../data/waymo_pcs_100k.npy', gpu=False)
+waymopair = WaymoLIDARPair(max_frames=100, voxel_size = voxel, gpu=False)
+
 vis = WaymoLIDARVisCallback()
 
 NUM_COMPONENTS = 50
@@ -48,7 +50,7 @@ while True:
 		end = time.time()
 
 		print(f"Num Points:{source_np.shape[0]}, Num GMM Components:{NUM_COMPONENTS}, Time Taken:{end - start}")
-	
+
 	#gmm_idxs = map_points_to_gmm(source_np, means, weights, covs, inv_covs)
 	gmm_idxs = gmm.predict(source_np)
 

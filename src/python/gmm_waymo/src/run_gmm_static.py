@@ -7,8 +7,8 @@ from gmm_impl import predict
 import cupy
 from scipy.stats import multivariate_normal
 
-filepath = '../data/bunny.pcd'
-#filepath = '../data/dragon.ply'
+#filepath = '../data/bunny.pcd'
+filepath = '../data/dragon.ply'
 #filepath = '../data/lounge.ply'
 
 n_gmm_components = 50
@@ -24,8 +24,8 @@ cov_type = 'spherical'
 #voxel = 0.014
 voxel = 0.0015
 
-source = o3.read_point_cloud(filepath)
-source = o3.voxel_down_sample(source, voxel_size=voxel)
+source = o3.io.read_point_cloud(filepath)
+source = o3.geometry.voxel_down_sample(source, voxel_size=voxel)
 print(source)
 source_np = np.asarray(source.points)
 
@@ -49,7 +49,7 @@ gmm_idxs = gmm.predict(source_np)
 gmm_idxs = cupy.asnumpy(gmm_idxs)
 source_colors = all_colors[gmm_idxs, :]
 
-vis = o3.Visualizer()
+vis = o3.visualization.Visualizer()
 vis.create_window()
 opt = vis.get_render_option()
 opt.background_color = np.asarray([0.0, 0.0167, 0.1186])

@@ -52,7 +52,7 @@ class Open3dVisualizerCallback(object):
 	"""
 	def __init__(self, source, target, save=False,
 				 keep_window=True):
-		self._vis = o3.Visualizer()
+		self._vis = o3.visualization.Visualizer()
 		self._vis.create_window()
 		self._source = source
 		self._target = target

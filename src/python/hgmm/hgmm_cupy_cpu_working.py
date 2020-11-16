@@ -405,7 +405,7 @@ def prepare_source_and_target_rigid_3d(source_filename,
                                        orientation=np.deg2rad([0.0, 0.0, 30.0]),
                                        translation=np.zeros(3),
                                        normals=False):
-    source = o3.read_point_cloud(source_filename)
+    source = o3.io.read_point_cloud(source_filename)
     source = o3.voxel_down_sample(source, voxel_size=0.005)
     print(source)
     target = copy.deepcopy(source)
@@ -431,7 +431,7 @@ def registration_gmmtree(source, target, maxiter=20, tol=1.0e-4,
 
 import copy
 # load source and target point cloud
-source =  o3.read_point_cloud('waymo1.pcd')
+source =  o3.io.read_point_cloud('waymo1.pcd')
 target = copy.deepcopy(source)
 # transform target point cloud
 th = np.deg2rad(30.0)

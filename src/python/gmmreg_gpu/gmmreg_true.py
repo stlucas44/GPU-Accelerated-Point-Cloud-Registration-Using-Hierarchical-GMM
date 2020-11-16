@@ -6,7 +6,7 @@ from probreg import l2dist_regs, gmmtree, cpd, filterreg
 import transformations as trans
 
 # load source and target point cloud
-source = o3.read_point_cloud('waymo1.pcd')
+source = o3.io.read_point_cloud('waymo1.pcd')
 source = o3.voxel_down_sample(source, voxel_size=1.5)
 print(source)
 target = copy.deepcopy(source)

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-tf.enable_eager_execution()
+#tf.enable_eager_execution()
 import open3d as o3
 import cupy
 
@@ -16,7 +16,7 @@ class WaymoLIDARVisCallback(object):
 	def __init__(self, save=False,
 				 keep_window=True):
 		#Create Visualizer Window etc
-		self._vis = o3.Visualizer()
+		self._vis = o3.visualization.Visualizer()
 		self._vis.create_window()
 		opt = self._vis.get_render_option()
 		opt.background_color = np.asarray([0.0, 0.0167, 0.1186])
@@ -35,12 +35,12 @@ class WaymoLIDARVisCallback(object):
 		self._currpc.points = o3.utility.Vector3dVector(pts)
 		if colors is not None:
 			self._currpc.colors = o3.utility.Vector3dVector(colors)
-		
+
 	def __call__(self, newpoints, colors=None, addpc=False):
 		if addpc:
 			self._vis.add_geometry(newpoints)
 		else:
-			#Convert Points into pointcloud 
+			#Convert Points into pointcloud
 			self.np_to_pc(newpoints, colors)
 			if(self._cnt == 0):
 				self._vis.add_geometry(self._currpc)
@@ -50,9 +50,9 @@ class WaymoLIDARVisCallback(object):
 		if self._save:
 			self._vis.capture_screen_image("image_%04d.jpg" % self._cnt)
 		self._cnt += 1
-	
+
 def convert_np_to_pc(np_pts):
-	pc = o3.geometry.PointCloud() 
+	pc = o3.geometry.PointCloud()
 	pc.points = o3.utility.Vector3dVector(np_pts)
 	return pc
 
@@ -83,7 +83,7 @@ class WaymoLIDARPair(object):
 			return ret_np[0], ret_np[1], ret_np[2], ret_np[3], False
 		else:
 			return None, None, None, None, True
-	
+
 	def copy_pc_to_gpu(self):
 		self.points_list_gpu = []
 		for i in range(len(self.points_list)):
@@ -98,7 +98,7 @@ class WaymoLIDARPair(object):
 			#print(pc)
 			pc = o3.voxel_down_sample(pc, voxel_size=self.voxel_size)
 			#print(pc)
-			self.pc_list.append(pc)	
+			self.pc_list.append(pc)
 			self.points_list_ds.append(np.asarray(pc.points))
 
 		self.points_list = self.points_list_ds
@@ -116,7 +116,7 @@ class WaymoLIDARPairReg(object):
 		for pc_np in self.points_list:
 			pc = convert_np_to_pc(pc_np)
 			self.pc_list.append(pc)
-				
+
 	def next_pair(self):
 		if(self._ptr < len(self.points_list)):
 			ret_np = (self.pc_list[self._ptr-1], self.pc_list[self._ptr])
@@ -126,10 +126,9 @@ class WaymoLIDARPairReg(object):
 			return ret_np[0], ret_np[1], False
 		else:
 			return None, None, True
-	
+
 	def copy_pc_to_gpu(self):
 		self.points_list_gpu = []
 		for i in range(self.points_list.shape[0]):
 			pc_np = self.points_list[i]
 			self.points_list_gpu.append(cupy.asarray(pc_np.astype(np.float32)))
-	

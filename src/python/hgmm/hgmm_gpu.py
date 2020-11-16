@@ -49,7 +49,7 @@ n_node = 8
 #         self.zero = 0.0
 #         self.one = np.zeros(3,dtype= np.float32)
 #         self.two = np.zeros((3,3),dtype= np.float32)
-  
+
 #     def set_zero(self,zero):
 #         self.zero = zero
 
@@ -71,7 +71,7 @@ n_node = 8
 #                 continue
 #             temp = temp + nodes[j].mixingCoeff * gaussianPdf(data[i],nodes[j].mean,nodes[j].covar)
 #         q = q + np.log(max(temp,eps))
-  
+
 #     return q
 
 
@@ -123,7 +123,7 @@ def invert(m, mout):
                                             m[2,0],m[2,1],m[2,2]
 
         det = m1*m5*m9 + m4*m8*m3 + m7*m2*m6 - m1*m6*m8 - m3*m5*m7 - m2*m4*m9
-        
+
         mout[0,0] = (m5*m9-m6*m8)/det
         mout[0,1] = (m3*m8-m2*m9)/det
         mout[0,2] = (m2*m6-m3*m5)/det
@@ -147,11 +147,11 @@ def invert(m, mout):
 def matmul(a, b, c):
     m, n = a.shape
     _, p = b.shape
-    
-    for i in range(m): 
-        for j in range(p): 
+
+    for i in range(m):
+        for j in range(p):
             c[i][j] = 0.0
-            for k in range(n): 
+            for k in range(n):
                 c[i][j] += a[i][k] * b[k][j]
 
 @cuda.jit(device=True)
@@ -246,14 +246,14 @@ def determinant(a):
 
 @cuda.jit(device = True)
 def mlEstimator(momentZero,momentOne,momentTwo,mixingCoeff,mean,covar,idx,nTotal,ld):
-  
+
 #   if (momentZero < ld):
 #       mixingCoeff[idx] = 0.0
 #       for i in range(len(mean)):
 #           mean[idx,i] = 0.0
 #       addZerosMat(covar[idx])
 
-#   else:  
+#   else:
     mixingCoeff[idx] = momentZero/nTotal
 
     for i in range(len(mean[idx])):
@@ -263,7 +263,7 @@ def mlEstimator(momentZero,momentOne,momentTwo,mixingCoeff,mean,covar,idx,nTotal
     copyVec3x1(mean[idx],meanNew)
     mean_tran = cuda.local.array((1,D), float32)
     transpose_mat(meanNew,mean_tran)
-    
+
     out_temp = cuda.local.array((D,D),float32)
     for i in range(D):
         for j in range(D):
@@ -274,7 +274,7 @@ def mlEstimator(momentZero,momentOne,momentTwo,mixingCoeff,mean,covar,idx,nTotal
 
     for i in range(D):
         for j in range(D):
-            covar[idx,i,j] =out_temp[i,j] - out2[i,j] 
+            covar[idx,i,j] =out_temp[i,j] - out2[i,j]
   #print("The mixing coefficient is before return is:",n1.mixingCoeff)
 
 
@@ -293,7 +293,7 @@ def gaussianPdfKernel(x, mu, cov):
     cov_inv = cuda.local.array((D,D), float32)
     invert(cov, cov_inv)
 
-    
+
     factor = 1.0/(SQRT_TWOPI * math.sqrt(det))
 
     cov_x_mu = cuda.local.array((D,1), float32)
@@ -304,7 +304,7 @@ def gaussianPdfKernel(x, mu, cov):
 
     prob = cuda.local.array((1,1), float32)
     matmul(x_mu_t, cov_x_mu, prob)
-    
+
     p = -0.5 * prob[0,0]
     p = math.exp(p)
 
@@ -318,12 +318,12 @@ def normalizeKernel(gamma,n_node,sumGamma):
         gamma[j] = gamma[j] * np.float32(1.0/sumGamma)
         if (gamma[j] > gamma[maxj]):
             maxj = j
-    
+
     return maxj
 
 @cuda.jit(device = True)
 def accumulateDevice(momentZero,momentOne,momentTwo,j,gamma,point,sumGamma):
-    
+
     gamma2 = gamma[0]/np.float32(sumGamma)
     if (gamma2 < eps):
         return
@@ -356,7 +356,7 @@ def accumulateDevice(momentZero,momentOne,momentTwo,j,gamma,point,sumGamma):
     cuda.atomic.add(momentTwo ,(j,2,0), gamma2 * out3[2,0])
     cuda.atomic.add(momentTwo ,(j,2,1), gamma2 * out3[2,1])
     cuda.atomic.add(momentTwo ,(j,2,2), gamma2 * out3[2,2])
-   
+
     #for i in range(D):
     #    momentOne[i] = out2[i,0]
 
@@ -372,11 +372,11 @@ def accumulateDevice(momentZero,momentOne,momentTwo,j,gamma,point,sumGamma):
     # matmultConstant(gamma2,out3,out4)
     # out5 = cuda.local.array((D,D),dtype = float32)
     # matAdd(momentTwo[j],out4,out5)
-    
+
     # for i in range(D):
     #     for j in range(D):
     #         momentTwo[i,j] = out5[i,j]
-    
+
 
 @cuda.reduce
 def sum_reduce(a, b):
@@ -386,7 +386,7 @@ TPB = 100
 
 @cuda.jit
 def gmmTreeEStepKernel(data,mixingCoeff,mean,covar,momentsZero,momentsOne,momentsTwo,parentIdx,currentIdx,nTotal):
-    
+
     idx = (cuda.blockDim.x * cuda.blockIdx.x) + cuda.threadIdx.x
     if (idx >= data.shape[0]):
         return
@@ -400,11 +400,11 @@ def gmmTreeEStepKernel(data,mixingCoeff,mean,covar,momentsZero,momentsOne,moment
         if (np.float32(p) > gamma[maxj,0]):
             maxj = j-j0
         sumGamma = sumGamma + p
-  
+
     if (sumGamma < eps):
         for j in range(n_node):
             gamma[j] = 0.0
-    
+
     for j in range(j0,j0+n_node):
         k = gamma[j- j0]
         accumulateDevice(momentsZero,momentsOne,momentsTwo,j,k,data[idx],sumGamma)
@@ -435,7 +435,7 @@ def gmmtreeMStepKernel(momentsZero,momentsOne,momentsTwo,mixingCoeff,mean,covar,
 #         for j in range(j0,j0+n_node):
 #             gamma[j-j0] = nodes[j].mixingCoeff * gaussianPdf(data[idx],nodes[j].mean,nodes[j].covar)
 #         sumGamma = sumFunc(gamma,n_node)
-        
+
 #         maxj = 0
 #         if (sumGamma < eps):
 #             for j in range(n_node):
@@ -452,7 +452,7 @@ def gmmtreeMStepKernel(momentsZero,momentsOne,momentsTwo,mixingCoeff,mean,covar,
 #             break
 #         accumulate(moments[searchID],gamma[searchID - j0],points[idx])
 
-blockSize = 128        
+blockSize = 128
 
 def accumulate(momentZero,momentOne,momentTwo,searchID,gamma,data):
   if (float(gamma) <  eps):
@@ -470,7 +470,7 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
     idxs = np.random.randint(nTotal,size = nTotal)
     points = points.astype(np.float32)
     #sig2 = cp.var(points)
-    #print("Variance is:",sig2/(3*n_node))  
+    #print("Variance is:",sig2/(3*n_node))
     #for i in range(5):
     #    print(points[i])
     #sig2 = 0.00034
@@ -483,7 +483,7 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
     momentsZero = np.zeros(nTotal,dtype = np.float32)
     momentsOne = np.zeros((nTotal,3),dtype = np.float32)
     momentsTwo = np.zeros((nTotal,3,3),dtype = np.float32)
-    
+
     for i in range(nTotal):
         mixingCoeff[i] = (1.0/n_node)
         mean[i] = points[idxs[i]]
@@ -546,14 +546,14 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
     mean = dev_mean.copy_to_host()
     covar = dev_covar.copy_to_host()
     return mixingCoeff,mean,covar
-  
+
 def gmmTreeRegESTep(points,mixingCoeff,mean,covar,maxTreeLevel,lc):
   #print("Node value is: ",nodes[0].mixingCoeff,nodes[0].mean,nodes[0].covar)
   nTotal = int(n_node * (np.power(n_node,maxTreeLevel) -1 )/(n_node-1))
   momentsZero = np.zeros(nTotal,dtype = np.float32)
   momentsOne = np.zeros((nTotal,3),dtype = np.float32)
   momentsTwo = np.zeros((nTotal,3,3),dtype = np.float32)
-    
+
   for i in range(points.shape[0]):
     searchID = -1
     gamma = np.zeros(n_node)
@@ -566,7 +566,7 @@ def gmmTreeRegESTep(points,mixingCoeff,mean,covar,maxTreeLevel,lc):
         gamma = gamma/den
       else:
         gamma = np.zeros(n_node)
-      
+
       searchID = np.argmax(gamma)
       searchID = searchID + j0
       if (complexity(covar[searchID]) <= lc):
@@ -693,18 +693,18 @@ class GMMTree():
             self._mixingCoeff,self._mean,self._covar = buildGMMTree(self._source,
                                         self._tree_level,
                                         20, 1.0e-4)
-            t2 = time.time()                         
-            
+            t2 = time.time()
+
             print("Build tree Time: ",t2-t1)
 
             t1 = time.time()
             self._mixingCoeff,self._mean,self._covar = buildGMMTree(self._source,
                                         self._tree_level,
                                         20, 1.0e-4)
-            t2 = time.time()                         
-            
-            print("Build tree Time: ",t2-t1)            
-            
+            t2 = time.time()
+
+            print("Build tree Time: ",t2-t1)
+
 
     def set_source(self, source):
         self._source = source
@@ -712,7 +712,7 @@ class GMMTree():
         self._mixingCoeff,self._mean,self._covar = buildGMMTree(self._source,
                                                  self._tree_level,
                                                  20, 1.0e-4)
-                                                  
+
         t2 = time.time()
         print("Build tree Time: ",t2-t1)
 
@@ -782,7 +782,7 @@ def prepare_source_and_target_rigid_3d(source_filename,
                                        orientation=np.deg2rad([0.0, 0.0, 30.0]),
                                        translation=np.zeros(3),
                                        normals=False):
-    source = o3.read_point_cloud(source_filename)
+    source = o3.io.read_point_cloud(source_filename)
     source = o3.voxel_down_sample(source, voxel_size=0.005)
     print(source)
     target = copy.deepcopy(source)
@@ -817,7 +817,8 @@ voxel = 0.032
 #voxel = 0.0225
 #voxel = 0.014
 
-source =  o3.read_point_cloud('lounge.ply')
+#source =  o3.io.read_point_cloud('lounge.ply')
+source =  o3.io.read_point_cloud('bunny.pcd')
 target = copy.deepcopy(source)
 # transform target point cloud
 th = np.deg2rad(30.0)

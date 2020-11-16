@@ -66,7 +66,7 @@ class L2DistRegistration(object):
 		f = None
 		x_ini = self._cost_fn.initial()
 		self._feature_gen.init()
-		
+
 		start_gmm_1 = time.time()
 		mu_target, phi_target = self._feature_gen.compute(target)
 		end_gmm_1 = time.time()
@@ -91,7 +91,7 @@ class L2DistRegistration(object):
 
 			# pcd2.points = o3.utility.Vector3dVector(mu_source)
 			# pcd2.paint_uniform_color([1,0,0])
-			
+
 			#print(mu_source.shape)
 			#print("Initial: ", x_ini)
 
@@ -190,9 +190,9 @@ if __name__ == "__main__":
 	import copy
 	#from probreg import transformation
 
-	source = o3.read_point_cloud('waymo1.pcd')
-	#target = o3.read_point_cloud("waymo5.pcd")
-	#source = o3.read_point_cloud('bunny.pcd')
+	source = o3.io.read_point_cloud('waymo1.pcd')
+	#target = o3.io.read_point_cloud("waymo5.pcd")
+	#source = o3.io.read_point_cloud('bunny.pcd')
 	target = copy.deepcopy(source)
 	# transform target point cloud
 	th = np.deg2rad(30.0)
