@@ -783,14 +783,14 @@ def prepare_source_and_target_rigid_3d(source_filename,
                                        translation=np.zeros(3),
                                        normals=False):
     source = o3.io.read_point_cloud(source_filename)
-    source = o3.voxel_down_sample(source, voxel_size=0.005)
+    source = o3.geometry.PointCloud.voxel_down_sample(source, voxel_size=0.005)
     print(source)
     target = copy.deepcopy(source)
     tp = np.asarray(target.points)
     np.random.shuffle(tp)
     rg = 1.5 * (tp.max(axis=0) - tp.min(axis=0))
     rands = (np.random.rand(n_random, 3) - 0.5) * rg + tp.mean(axis=0)
-    target.points = o3.Vector3dVector(np.r_[tp + noise_amp * np.random.randn(*tp.shape), rands])
+    target.points = o3.utility.Vector3dVector(np.r_[tp + noise_amp * np.random.randn(*tp.shape), rands])
     ans = trans.euler_matrix(*orientation)
     ans[:3, 3] = translation
     target.transform(ans)
@@ -827,8 +827,9 @@ target.transform(np.array([[np.cos(th), -np.sin(th), 0.0, 0.0],
                            [np.sin(th), np.cos(th), 0.0, 0.0],
                            [0.0, 0.0, 1.0, 0.0],
                            [0.0, 0.0, 0.0, 1.0]]))
-source = o3.voxel_down_sample(source, voxel_size=voxel)
-target = o3.voxel_down_sample(target, voxel_size=voxel)
+#source = o3.geometry.PointCloud.voxel_down_sample(source, voxel_size=voxel)
+#target = o3.geometry.PointCloud.voxel_down_sample(target, voxel_size=voxel)
+
 #sCheck = np.asarray(source.points)
 #tCheck = np.asarray(target.points)
 #print("Source points are:")
@@ -845,6 +846,6 @@ result.points = tf_param.transform(result.points)
 source.paint_uniform_color([1, 0, 0])
 target.paint_uniform_color([0, 1, 0])
 result.paint_uniform_color([0, 0, 1])
-o3.draw_geometries([source, target, result])
+o3.visualization.draw_geometries([source, target, result])
 
 #o3.draw_geometries([result])

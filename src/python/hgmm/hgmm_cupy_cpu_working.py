@@ -49,7 +49,7 @@ class moment:
         self.zero = 0.0
         self.one = np.zeros(3,dtype= np.float32)
         self.two = np.zeros((3,3),dtype= np.float32)
-  
+
     def set_zero(self,zero):
         self.zero = zero
 
@@ -81,7 +81,7 @@ def logLikelihoodValue(nodes,data,j0,j1):
                 continue
             temp = temp + nodes[j].mixingCoeff * gaussianPdf(data[i],nodes[j].mean,nodes[j].covar)
         q = q + np.log(max(temp,eps))
-  
+
     return q
 
 def complexity(cov):
@@ -110,7 +110,7 @@ def mlEstimator(moment,nTotal,ld):
   n1 = node()
   if (moment.zero < ld):
     return n1
-  
+
   #pdb.set_trace()
   n1.set_mixingCoeff(float(moment.zero / nTotal))
   n1.set_mean(moment.one/float(moment.zero))
@@ -124,7 +124,7 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
   cp.random.seed(nTotal)
   idxs = cp.random.randint(nTotal,size = nTotal)
   #sig2 = cp.var(points)
-  #print("Variance is:",sig2/(3*n_node))  
+  #print("Variance is:",sig2/(3*n_node))
   #for i in range(5):
   #    print(points[i])
   sig2 = 0.00034
@@ -134,7 +134,7 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
     nodes[i].set_mixingCoeff(1.0/n_node)
     nodes[i].set_mean(points[int(idxs[i])])
     nodes[i].set_covar(np.identity(3) * sig2)
-  
+
   parentIdx = -1*np.ones(points.shape[0],dtype = int)
   currentIdx = np.zeros(points.shape[0],dtype = int)
 
@@ -158,19 +158,19 @@ def buildGMMTree(points,maxTreeLevel,ls,ld):
     parentIdx = cp.copy(currentIdx)
   #print("Nodes is",nodes)
   return nodes
-  
+
 def gmmTreeEStep(points,nodes,parentIdx,currentIdx,maxTreeLevel):
   nTotal = int(n_node * (np.power(n_node,maxTreeLevel) -1 )/(n_node-1))
   moments = []
   for i in range(nTotal):
     moments.append(moment())
-  #print("Entered into the E Step")
+  print("Entered into the E Step")
   for i in range(points.shape[0]):
     j0 = int(child(parentIdx[i]))
     gamma = np.zeros(n_node)
     for j in range(j0,j0 + n_node):
       gamma[j - j0] = nodes[j].mixingCoeff * gaussianPdf(points[i],nodes[j].mean,nodes[j].covar)
-    
+
     den = np.sum(gamma)
     if (float(den) > eps):
       gamma = gamma/den
@@ -205,7 +205,7 @@ def gmmTreeRegESTep(points,nodes,maxTreeLevel,lc):
   moments = []
   for i in range(nTotal):
     moments.append(moment())
-  
+
   for i in range(points.shape[0]):
     searchID = -1
     gamma = np.zeros(n_node)
@@ -218,7 +218,7 @@ def gmmTreeRegESTep(points,nodes,maxTreeLevel,lc):
         gamma = gamma/den
       else:
         gamma = np.zeros(n_node)
-      
+
       searchID = np.argmax(gamma)
       searchID = searchID + j0
       if (complexity(nodes[searchID].covar) <= lc):
@@ -336,6 +336,7 @@ class GMMTree():
                                                  80, 1.0e-4)
             print("Length of nodes :",len(self._nodes))
 
+
     def set_source(self, source):
         self._source = source
         self._nodes = buildGMMTree(self._source,
@@ -406,14 +407,14 @@ def prepare_source_and_target_rigid_3d(source_filename,
                                        translation=np.zeros(3),
                                        normals=False):
     source = o3.io.read_point_cloud(source_filename)
-    source = o3.voxel_down_sample(source, voxel_size=0.005)
+    source = o3.geometry.PointCloud.voxel_down_sample(source, 0.005) #second is voxel size
     print(source)
     target = copy.deepcopy(source)
     tp = np.asarray(target.points)
     np.random.shuffle(tp)
     rg = 1.5 * (tp.max(axis=0) - tp.min(axis=0))
     rands = (np.random.rand(n_random, 3) - 0.5) * rg + tp.mean(axis=0)
-    target.points = o3.Vector3dVector(np.r_[tp + noise_amp * np.random.randn(*tp.shape), rands])
+    target.points = o3.utility.Vector3dVector(np.r_[tp + noise_amp * np.random.randn(*tp.shape), rands])
     ans = trans.euler_matrix(*orientation)
     ans[:3, 3] = translation
     target.transform(ans)
@@ -440,8 +441,8 @@ target.transform(np.array([[np.cos(th), -np.sin(th), 0.0, 0.0],
                            [np.sin(th), np.cos(th), 0.0, 0.0],
                            [0.0, 0.0, 1.0, 0.0],
                            [0.0, 0.0, 0.0, 1.0]]))
-source = o3.voxel_down_sample(source, voxel_size=1.0)
-target = o3.voxel_down_sample(target, voxel_size=1.0)
+source = o3.geometry.PointCloud.voxel_down_sample(source, 1.0) #second is voxel size
+target = o3.geometry.PointCloud.voxel_down_sample(target, 1.0) #second is voxel size
 #sCheck = np.asarray(source.points)
 #tCheck = np.asarray(target.points)
 #print("Source points are:")
@@ -458,6 +459,7 @@ result.points = tf_param.transform(result.points)
 source.paint_uniform_color([1, 0, 0])
 target.paint_uniform_color([0, 1, 0])
 result.paint_uniform_color([0, 0, 1])
-o3.draw_geometries([source, target, result])
+
+o3.visualization.draw_geometries([source, target, result])
 
 #o3.draw_geometries([result])
